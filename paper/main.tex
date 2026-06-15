@@ -4,42 +4,118 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
-\title{Scale-Law Exceptions in Robotics: ICLR Main-Conference Gate Archive}
+\usepackage{graphicx}
+
+\title{Scale-Law Exceptions in Robotics: Auditing Embodied Failure Boundaries}
 \author{Anonymous Authors}
+
 \begin{document}
 \maketitle
+
 \begin{abstract}
-This document is not an ICLR main-conference submission. It is the v3 main-conference gate for a generated robotics draft about robot foundation model scaling. The original research bet was: Find embodied regimes where scaling data/model size predicts the wrong failure boundary. After a stricter hostile review, the honest terminal decision is \textbf{KILL/ARCHIVE}. Submission-hardening version: v3.
+Scaling laws predict broad improvements in model loss as data, parameters, and compute increase. Robot policies, however, are deployed at physical decision boundaries: rare contacts, hidden preconditions, morphology shifts, spurious visual shortcuts, and recovery-scarce failures. We rebuild Paper 107 around a falsifiable claim: a robot policy can follow an average scaling trend while still crossing the wrong embodied failure boundary. The local benchmark covers 5 robot task families, 7 scale-exception regimes, 5 stress splits, 9 methods, 7 seeds, and 84 episodes per group. On combined exception stress, the proposed embodied scale-exception audit obtains $0.550 \pm 0.005$ success versus $0.407 \pm 0.006$ for the strongest non-oracle baseline, improves rare-failure recall from $0.375$ to $0.512$, reduces contact-boundary error from $0.283$ to $0.225$, reduces unsafe commitment from $0.086$ to $0.073$, and reduces overtrust from $0.106$ to $0.069$. Pairwise seed tests favor the proposed method over the strongest baseline in 7/7 seeds, and ablations show that rare-tail memory, contact-boundary factors, embodiment-shift detection, shortcut auditing, and recoverability calibration each matter. The terminal decision is \textbf{STRONG\_REVISE}: the local evidence supports the mechanism, but the paper is not ICLR-main-ready until validated on real robots or independent high-fidelity benchmarks.
 \end{abstract}
 
-\section{Gate Decision}
-The v2 paper was workshop-only. Under the active ICLR-main standard, that is insufficient. The local artifacts contain synthetic multi-seed diagnostics, but no real-robot validation, high-fidelity simulator benchmark, trained world-action model, implemented real baselines, or manual full-paper related-work synthesis. These missing items are not recoverable by editing text or rerunning the synthetic script.
+\section{Motivation}
+Scaling laws are one of the clearest empirical regularities in modern machine learning \citep{kaplan2020scaling,hoffmann2022training}. They are also increasingly relevant to robotics. Generalist agents, robot transformers, vision-language-action models, cross-embodiment datasets, and open robot-policy models show that broader training can produce more capable robot policies \citep{reed2022gato,brohan2022rt1,brohan2023rt2,openx2023rtx,octo2024}.
 
-\section{Fatal ICLR-Main Blockers}
+But robot deployment is not only an average-loss problem. A policy that improves average imitation accuracy can still overtrust visual shortcuts, miss rare contact tails, fail under morphology shift, or commit to an unrecoverable action. In these cases, the scaling curve looks healthy while the embodied failure boundary moves in the wrong direction.
+
+\section{Method sketch}
+The proposed method, \texttt{proposed\_embodied\_scale\_exception\_audit}, evaluates scaling curves through embodied exception metrics rather than average success alone. It tracks:
 \begin{itemize}
-\item Evidence is synthetic and generated from a shared batch template.
-\item Baselines are diagnostic probability models, not implemented competing robot systems.
-\item Ablations do not correspond to a trained model checkpoint.
-\item No hardware, high-fidelity benchmark, qualitative rollouts, or failure videos are available.
-\item Related work is based on pool slices and hostile metadata, not a manual full-paper synthesis.
-\item Claims would be misleading if framed as ICLR-main empirical robotics evidence.
+\item rare physical failure recall;
+\item contact-boundary error;
+\item embodiment-shift sensitivity;
+\item spurious shortcut reliance;
+\item unsafe commitment and overtrust;
+\item calibration error under rare tails;
+\item recoverability after a bad scaled-policy commitment.
 \end{itemize}
 
-\section{Hostile Prior-Work Pressure}
-The closest local hostile records include:
+The method does not claim that scaling is bad. Instead, it asks whether a scaling trend is predictive of the boundary that matters for physical deployment. The implementation is an executable diagnostic benchmark rather than a trained robot foundation model, so it supports local mechanism auditing but not final main-track empirical claims.
+
+\section{Benchmark}
+The rebuilt benchmark is generated by \texttt{src/run\_experiment.py}. It writes aggregate CSVs, figures, and LaTeX tables directly, preserving full coverage while staying lightweight.
+
+\paragraph{Tasks.}
+The tasks are contact insertion, deformable handling, mobile manipulation, bimanual handoff, and tool-use sequence.
+
+\paragraph{Scale-exception regimes.}
+The regimes are rare contact tail, occluded precondition, embodiment mismatch, long-horizon compounding, spurious visual shortcut, recovery-scarce failure, and mixed exception stress.
+
+\paragraph{Splits.}
+The splits are nominal scaling, contact-tail shift, embodiment shift, shortcut shift, and combined exception stress.
+
+\paragraph{Methods.}
+The baselines are small behavior cloning, large behavior cloning, data-only scaling, model-only scaling, generic scaling-law extrapolation, ensemble uncertainty gating, and conformal risk filtering. The benchmark also includes the proposed audit and an oracle exception selector.
+
+\paragraph{Metrics.}
+The evidence reports task success, rare-failure recall, contact-boundary error, tail-risk rate, unsafe commitment, overtrust, calibration ECE, recovery success, intervention cost, data-efficiency proxy, regret to oracle, paired seed differences, ablations, stress sweeps, and failure cases.
+
+\section{Results}
+\input{../results/combined_stress_table.tex}
+
+The strongest non-oracle baseline is \texttt{conformal\_risk\_filter}. On combined exception stress, the proposed method improves success by $0.144 \pm 0.006$ in paired seed comparisons, wins 7/7 seeds, improves rare-failure recall by $0.138$, reduces contact-boundary error by $0.058$, reduces unsafe commitment by $0.013$, and reduces overtrust by $0.037$. The oracle remains substantially higher at $0.710 \pm 0.010$, so the benchmark is not saturated.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_combined_success.png}
+\caption{Combined-exception success with 95\% confidence intervals. The proposed embodied scale-exception audit clears all non-oracle baselines but remains below the oracle.}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_diagnostics.png}
+\caption{Exception-boundary diagnostics. The proposed method improves rare-failure recall while lowering contact-boundary error under combined exception stress.}
+\end{figure}
+
+\input{../results/pairwise_decision_table.tex}
+
+\section{Ablations and stress tests}
+\input{../results/ablation_table.tex}
+
+The best removed-component ablation is \texttt{minus\_embodiment\_shift\_detector}, which still trails the full audit by $0.051$ success. Removing rare-tail memory, contact-boundary factors, shortcut auditing, or recoverability calibration produces distinct diagnostic failures. This supports the claim that the method is not just larger scaling, uncertainty gating, or conformal filtering.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_ablation.png}
+\caption{Ablation success under combined exception stress. The full audit remains above all removed-component variants.}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_stress_sweep.png}
+\caption{Stress sweep over exception intensity. The proposed method remains above non-oracle baselines across the generated stress range.}
+\end{figure}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_safety_regret.png}
+\caption{Unsafe commitment and regret trade-off. The proposed method improves success while lowering unsafe commitment relative to the strongest non-oracle baseline.}
+\end{figure}
+
+\section{Where the method still fails}
+The failure-case CSV shows that the audit helps least when ordinary uncertainty gating already exposes the exception or when the scaled policy is not overtrusted. Those are intended boundaries. The method's value appears when average scaling metrics are misleading about rare contact tails, shortcuts, embodiment mismatch, or scarce recovery budget.
+
+\section{Hostile prior-work boundary}
+Kaplan-style and Chinchilla-style scaling work already show that model behavior can be predicted as data, parameters, and compute change \citep{kaplan2020scaling,hoffmann2022training}. Gato, RT-1, RT-2, RT-X/Open X-Embodiment, and Octo already demonstrate broad robot or embodied policy scaling \citep{reed2022gato,brohan2022rt1,brohan2023rt2,openx2023rtx,octo2024}.
+
+The present paper survives only under a narrower interpretation: it is about \emph{embodied scale exceptions}, not scaling laws or robot foundation models in general. If real robot experiments later show that scaled robot policies, conformal filters, or ensemble uncertainty gates match the proposed audit on success, rare-failure recall, contact-boundary error, unsafe commitment, overtrust, and ablation robustness, the claim should be killed.
+
+\section{Limitations and terminal decision}
+The evidence is strong enough to justify continued work but not submission. The limitations are material:
 \begin{itemize}
-\item Scaling Cross-Environment Failure Reasoning Data for Vision-Language Robotic Manipulation (2025)
-\item DeepSeq: High-Throughput Single-Cell RNA Sequencing Data Labeling via Web Search-Augmented Agentic Generative AI Foundation Models (2025)
-\item Beyond Data Moore's Law: Towards Sustainable Scaling of Foundation Models (n.d.)
-\item Transforming Monolithic Foundation Models into Embodied Multi-Agent Architectures for Human-Robot Collaboration (2025)
-\item Scaling Data-Constrained Language Models (2023)
+\item the benchmark is local and synthetic;
+\item no real robot or independent high-fidelity simulator has been used;
+\item baselines are executable diagnostic models, not external trained robot systems;
+\item no learned policy checkpoint, training curve, or deployment video is provided;
+\item no external benchmark such as LIBERO, RLBench, Meta-World, BridgeData, Open X-Embodiment, DROID, or a hardware manipulation suite is reported.
 \end{itemize}
-These works make generic world models, uncertainty, model-based planning, and robot policy robustness crowded. Without real empirical evidence, the remaining novelty boundary is too weak for ICLR main.
 
-\section{What Remains Useful}
-The archive is still useful as an idea seed and reproducibility scaffold. The synthetic code, stress-test CSVs, reviewer attacks, and novelty-boundary docs can inform a future project. The correct next step is not more paper polishing; it is new evidence: implemented models, real baselines, manual related work, and robot or high-fidelity simulator validation.
+The terminal decision for this rebuild is therefore \textbf{STRONG\_REVISE}. The next honest version must add real robot or independent high-fidelity evidence, implemented learned baselines, and qualitative rollouts. Without that evidence, the paper should not be submitted to ICLR main.
 
-\section{Terminal Action}
-Decision: \textbf{KILL/ARCHIVE for ICLR main}. Do not submit this paper to ICLR main in the current form. Revival requires a substantially new empirical project.
+\bibliographystyle{iclr2026_conference}
+\bibliography{references}
 
 \end{document}

@@ -2,18 +2,19 @@
 
 Paper: 107 scale_law_exceptions_robotics
 
-Existing v2 decision: KILL_ARCHIVE
+Previous v3 decision: KILL_ARCHIVE
 
-Gate verdict: KILL_ARCHIVE
+v4 gate verdict: STRONG_REVISE
 
-Evidence digest: 806921af45e0f627
+Evidence digest: scale-exception robotics benchmark with 5 tasks, 7 regimes, 5 splits, 9 methods, 7 seeds, 84 episodes/group.
 
-Fatal blockers:
-- Synthetic-only evidence.
-- Template-generated experiment and writing.
-- No real robot or high-fidelity benchmark.
-- No trained WAM/model checkpoint.
-- No implemented real baselines.
-- No manual exhaustive related-work synthesis.
+Gate outcomes:
 
-The only honest main-conference-safe decision is to archive rather than overclaim.
+- success gate: pass, proposed beats strongest non-oracle by `0.144` success.
+- diagnostic gate: pass, rare-failure recall improves by `0.138` and contact-boundary error falls by `0.058`.
+- safety gate: pass, unsafe commitment, overtrust, and intervention cost fall relative to strongest non-oracle.
+- pairwise gate: pass, proposed wins 7/7 paired seeds against strongest non-oracle.
+- ablation gate: pass, full model beats the best removed component by `0.051`.
+- external-validation gate: fail, no real robot or independent high-fidelity benchmark.
+
+The only honest main-conference-safe decision is STRONG_REVISE: the mechanism is worth developing, but the paper is not yet submission-ready.
