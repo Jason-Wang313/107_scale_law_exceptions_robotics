@@ -1,32 +1,27 @@
-        # Literature Map
+# Literature Map
 
-        Paper: 107 scale_law_exceptions_robotics
+Paper: 107 scale_law_exceptions_robotics
 
-        Field box: robot foundation model scaling
+Field box: scaling laws, robot foundation models, cross-embodiment datasets, and robotics safety/reliability.
 
-        Thesis: Scale-Law Exceptions in Robotics turns the seed bet into a mechanism: Find embodied regimes where scaling data/model size predicts the wrong failure boundary.
+Thesis: average scaling curves can hide embodied failure-boundary regressions.
 
-        ## Landscape Sweep Summary
-        The selector ranked records from the shared 500,000-record pool. The closest visible clusters are:
-        - Building a Foundation for More Flexible A/B Testing: Applications of Interim Monitoring to Large Scale Data (2023)
-- Beyond Data Moore’s Law: Towards Sustainable Scaling of Foundation Models ()
-- Scaling Data-Constrained Language Models (2023)
-- DeepSeq: High-Throughput Single-Cell RNA Sequencing Data Labeling via Web Search-Augmented Agentic Generative AI Foundation Models (2025)
-- AutoRT: Embodied Foundation Models for Large Scale Orchestration of Robotic Agents (2024)
-- Scaling Cross-Environment Failure Reasoning Data for Vision-Language Robotic Manipulation (2025)
-- Analysis of Slip Failure Characteristics and Support Deformation Law of Structural Planes and Rock Foundation Pits with Developed Karst Caves (2022)
-- Training Foundation Models as Data Compression: On Information, Model Weights and Copyright Law (2024)
-- Multi-Scaling Laws for Embodied Intelligence: A Conjecture on Nested Power-Law Relationships in Dexterous Manipulation ()
-- Impact of dataset size on fine‐tuning foundation models for neuroanatomic segmentation: Testing the foundation model hypothesis (2026)
-- Lithium-ion battery data and where to find it (2021)
-- ECG-FM: an open electrocardiogram foundation model (2025)
+## Crowded Neighbor Clusters
 
-        ## Hidden Assumptions
-        - The executed trajectory is a sufficient training target.
-- Unobserved physical alternatives can be averaged into uncertainty.
-- Task labels capture the mechanism that caused failure.
-- A planner only needs nominal feasibility.
-- Embodiment-specific contact effects are nuisance variation.
+- Scaling laws for neural models: predictable loss improvements from model size, data, and compute.
+- Compute-optimal scaling: data/model balance and scaling efficiency.
+- Robot foundation models: RT-1, RT-2, RT-X, Octo, and open robot datasets.
+- Generalist agents: multi-task embodied policies that benefit from broad training.
+- Risk filters: uncertainty, ensembles, and conformal prediction for safety gating.
 
-        ## Boundary
-        The project avoids weak moves such as bigger models, generic uncertainty, or a benchmark-only contribution. It centers a mechanism-level change: Scale law exceptions robotics keeps action-critical alternatives explicit until a physical observation collapses them.
+## Hidden Assumptions Attacked
+
+- Average loss or average success is enough to predict deployed robot safety.
+- Larger robot datasets automatically cover rare physical tails.
+- Web-scale representations solve embodiment mismatch.
+- Conformal or ensemble gating catches all scale-law exceptions.
+- Recovery scarcity can be treated as a generic tail-risk metric.
+
+## Boundary
+
+The project centers a mechanism-level change: audit scaling curves against embodied exception metrics, including rare-failure recall, contact-boundary error, unsafe commitment, overtrust, calibration under rare tails, recoverability, and regret to an oracle exception selector.

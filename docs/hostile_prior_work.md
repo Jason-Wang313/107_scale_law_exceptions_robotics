@@ -1,17 +1,14 @@
-        # Hostile Prior Work
+# Hostile Prior Work
 
-        The hostile set contains 100 papers. The strongest threats are:
-        - Scaling Cross-Environment Failure Reasoning Data for Vision-Language Robotic Manipulation (2025)
-- DeepSeq: High-Throughput Single-Cell RNA Sequencing Data Labeling via Web Search-Augmented Agentic Generative AI Foundation Models (2025)
-- Beyond Data Moore’s Law: Towards Sustainable Scaling of Foundation Models ()
-- Transforming Monolithic Foundation Models into Embodied Multi-Agent Architectures for Human-Robot Collaboration (2025)
-- Scaling Data-Constrained Language Models (2023)
-- ECG-FM: an open electrocardiogram foundation model (2025)
-- Impact of dataset size on fine‐tuning foundation models for neuroanatomic segmentation: Testing the foundation model hypothesis (2026)
-- Analysis of Slip Failure Characteristics and Support Deformation Law of Structural Planes and Rock Foundation Pits with Developed Karst Caves (2022)
-- Building a Foundation for More Flexible A/B Testing: Applications of Interim Monitoring to Large Scale Data (2023)
-- AutoRT: Embodied Foundation Models for Large Scale Orchestration of Robotic Agents (2024)
-- Training Foundation Models as Data Compression: On Information, Model Weights and Copyright Law (2024)
-- Failure Mode and Effect Analysis Using Large-Scale Group Decision Making and Normal Cloud Model (2026)
+The hostile set contains scaling laws, robot foundation models, generalist agents, open robot datasets, and uncertainty/safety filters. The strongest pressure comes from:
 
-        The novelty boundary is not "robotics plus more data" or "add uncertainty." The contribution must show that the mechanism in `scale_law_exceptions_robotics` changes what the model represents or what the planner can choose.
+- Neural scaling-law work, which shows predictable loss improvements from data/model/compute scaling.
+- Compute-optimal scaling work, which shows that larger is not the only scaling axis and that data/model balance matters.
+- RT-1 and RT-2 style robot foundation models, which show real-world robot control gains from larger robot data and web-scale representations.
+- Open X-Embodiment and RT-X style cross-embodiment training, which directly target robot generalization through larger shared robot datasets.
+- Octo and other open generalist robot policies, which already make multi-embodiment robot-policy scaling concrete.
+- Ensemble uncertainty and conformal risk filters, which already catch some tail failures without a new scale-exception mechanism.
+
+The novelty boundary is therefore narrow. The contribution cannot be "scaling is useful", "bigger models fail sometimes", "uncertainty helps", or "robot data should be broader." The surviving claim is embodied scale-exception auditing: identifying when average scaling metrics improve while contact-boundary, rare-tail, shortcut, embodiment-shift, overtrust, or recoverability metrics regress.
+
+The v4 local benchmark supports this boundary but does not close the external-validation gap.

@@ -1,21 +1,37 @@
 # 107 Scale-Law Exceptions in Robotics
 
-Submission-hardening version: v3
+Submission-hardening version: v4
 
-Terminal decision: KILL_ARCHIVE for ICLR main conference.
+Terminal decision: STRONG_REVISE for an ICLR-main-target paper, not ready-to-submit.
 
-The repository is retained as an archive of the generated idea, hostile review, synthetic stress-test scaffold, and reproducibility files. It is not an ICLR main-conference-ready robotics paper because it lacks real-robot/high-fidelity evidence and implemented learned baselines.
+This rebuild replaces the v3 archive with a paper-specific scale-exception robotics benchmark. The central claim is narrow: scaling data or model size can improve average behavior-cloning or prediction metrics while still missing embodied failure boundaries in rare contact tails, occluded preconditions, embodiment mismatch, long-horizon compounding, spurious visual shortcuts, and recovery-scarce failures.
 
-## Reproduce Synthetic Scaffold
+The local evidence supports the mechanism. On combined exception stress, `proposed_embodied_scale_exception_audit` reaches `0.550 +/- 0.005` success versus `0.407 +/- 0.006` for the strongest non-oracle baseline, `conformal_risk_filter`. Rare-failure recall improves from `0.375` to `0.512`; contact-boundary error falls from `0.283` to `0.225`; unsafe commitment falls from `0.086` to `0.073`; overtrust falls from `0.106` to `0.069`; and paired seed comparisons favor the proposed method in 7/7 seeds.
+
+The honest limitation is still material: this is a local executable diagnostic benchmark, not real robot or independently validated high-fidelity simulator evidence. The paper should be revised with external robot validation before main-track submission.
+
+## Reproduce Evidence
 
 ```powershell
 python src\run_experiment.py
 ```
 
-## Rebuild Archive PDF
+Generated artifacts:
+
+- `results/metrics.csv`
+- `results/pairwise_stats.csv`
+- `results/ablation_metrics.csv`
+- `results/stress_sweep.csv`
+- `results/failure_cases.csv`
+- `figures/scale_exception_*.png`
+- `paper/main.tex`
+
+## Rebuild PDF
 
 ```powershell
 cd paper
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+bibtex main
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 pdflatex -interaction=nonstopmode -halt-on-error main.tex
 ```

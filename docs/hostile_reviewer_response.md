@@ -1,26 +1,23 @@
-        # Hostile Reviewer Response
+# Hostile Reviewer Response
 
-        Paper: 107 Scale-Law Exceptions in Robotics
+Paper: 107 Scale-Law Exceptions in Robotics
 
-        ## Strongest Technical Threats
-        - Scaling Cross-Environment Failure Reasoning Data for Vision-Language Robotic Manipulation (2025)
-- DeepSeq: High-Throughput Single-Cell RNA Sequencing Data Labeling via Web Search-Augmented Agentic Generative AI Foundation Models (2025)
-- Beyond Data Moore's Law: Towards Sustainable Scaling of Foundation Models (n.d.)
-- Transforming Monolithic Foundation Models into Embodied Multi-Agent Architectures for Human-Robot Collaboration (2025)
-- Scaling Data-Constrained Language Models (2023)
-- ECG-FM: an open electrocardiogram foundation model (2025)
-- Impact of dataset size on fine-tuning foundation models for neuroanatomic segmentation: Testing the foundation model hypothesis (2026)
-- Analysis of Slip Failure Characteristics and Support Deformation Law of Structural Planes and Rock Foundation Pits with Developed Karst Caves (2022)
+## Strongest Technical Threats
 
-        ## ICLR Main Response
-        A hostile ICLR reviewer would be correct to reject this as a main-conference submission. The v2 paper has reproducible synthetic evidence and careful limitations, but it does not contain the real robot, high-fidelity simulator, learned model, or manual related-work depth needed for the ICLR main track.
+- Scaling-law papers already show predictable neural loss improvements under data/model/compute scaling.
+- Compute-optimal scaling already shows that scale must be balanced, not merely increased.
+- RT-1, RT-2, RT-X, Open X-Embodiment, DROID, and Octo already provide strong robot-foundation-model scaling evidence.
+- Ensemble uncertainty and conformal risk filtering already catch some deployment tails.
+- A reviewer may argue that "scale fails on tails" is too obvious unless the paper isolates an embodied mechanism.
 
-        ## Honest Action
-        The paper is marked `KILL_ARCHIVE`. This avoids converting a generated workshop-style idea into an overstated main-conference claim.
+## ICLR Main Response
 
-        ## What Would Be Needed To Revive
-        - Real robot or high-fidelity benchmark experiments.
-        - Implemented model and baselines, not synthetic probability tables.
-        - Manual full-paper related-work audit.
-        - Paper-specific writing and figures.
-        - Evidence that the core mechanism is learned and useful under deployment shift.
+The v4 rebuild narrows the claim to embodied scale exceptions: cases where average scaling metrics improve while rare-failure recall, contact-boundary error, unsafe commitment, overtrust, or recovery scarcity regress. The local benchmark supports that narrower boundary. Proposed combined-exception success is `0.550 +/- 0.005` versus `0.407 +/- 0.006` for `conformal_risk_filter`; rare-failure recall improves by `0.138`; contact-boundary error drops by `0.058`; unsafe commitment and overtrust both decrease; and the strongest-baseline paired comparison is 7/7 seeds in favor of the proposed method.
+
+## Remaining Hostile Review
+
+A hostile reviewer would still be right to reject a main-track submission today if it claimed deployment readiness. The evidence is local and synthetic; the baselines are diagnostic executable models rather than external robot systems; and there is no real robot or independently validated high-fidelity simulator result.
+
+## Honest Action
+
+The paper is marked `STRONG_REVISE`. Continue only if the next version adds real robot or high-fidelity external validation, implemented learned baselines, and qualitative rollouts.
