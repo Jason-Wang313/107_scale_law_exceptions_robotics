@@ -5,15 +5,18 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{graphicx}
+\usepackage{microtype}
 
-\title{Scale-Law Exceptions in Robotics: Auditing Embodied Failure Boundaries}
+\raggedbottom
+
+\title{Auditing Scale-Law Exceptions in Robotics}
 \author{Anonymous Authors}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Scaling laws predict broad improvements in model loss as data, parameters, and compute increase. Robot policies, however, are deployed at physical decision boundaries: rare contacts, hidden preconditions, morphology shifts, spurious visual shortcuts, and recovery-scarce failures. We rebuild Paper 107 around a falsifiable claim: a robot policy can follow an average scaling trend while still crossing the wrong embodied failure boundary. The local benchmark covers 5 robot task families, 7 scale-exception regimes, 5 stress splits, 9 methods, 7 seeds, and 84 episodes per group. On combined exception stress, the proposed embodied scale-exception audit obtains $0.550 \pm 0.005$ success versus $0.407 \pm 0.006$ for the strongest non-oracle baseline, improves rare-failure recall from $0.375$ to $0.512$, reduces contact-boundary error from $0.283$ to $0.225$, reduces unsafe commitment from $0.086$ to $0.073$, and reduces overtrust from $0.106$ to $0.069$. Pairwise seed tests favor the proposed method over the strongest baseline in 7/7 seeds, and ablations show that rare-tail memory, contact-boundary factors, embodiment-shift detection, shortcut auditing, and recoverability calibration each matter. The terminal decision is \textbf{STRONG\_REVISE}: the local evidence supports the mechanism, but the paper is not ICLR-main-ready until validated on real robots or independent high-fidelity benchmarks.
+Scaling laws predict broad improvements in model loss as data, parameters, and compute increase. Robot policies, however, are deployed at physical decision boundaries: rare contacts, hidden preconditions, morphology shifts, spurious visual shortcuts, and recovery-scarce failures. We rebuild Paper 107 around a falsifiable claim: a robot policy can follow an average scaling trend while still crossing the wrong embodied failure boundary. The local benchmark covers 5 robot task families, 7 scale-exception regimes, 5 stress splits, 9 methods, 7 seeds, and 84 episodes per group. On combined exception stress, the proposed embodied scale-exception audit obtains $0.550 \pm 0.005$ success versus $0.407 \pm 0.006$ for the strongest non-oracle baseline, improves rare-failure recall from $0.375$ to $0.512$, reduces contact-boundary error from $0.283$ to $0.225$, reduces unsafe commitment from $0.086$ to $0.073$, and reduces overtrust from $0.106$ to $0.069$. Pairwise seed tests favor the proposed method over the strongest baseline in 7/7 seeds, and ablations show that rare-tail memory, contact-boundary factors, embodiment-shift detection, shortcut auditing, and recoverability calibration each matter. A 2026-06-15 continuation audit reran the full benchmark and preserved the terminal decision: \textbf{STRONG\_REVISE}. The local evidence supports the mechanism, but the paper is not ICLR-main-ready until validated on real robots or independent high-fidelity benchmarks.
 \end{abstract}
 
 \section{Motivation}
@@ -57,6 +60,8 @@ The evidence reports task success, rare-failure recall, contact-boundary error, 
 \input{../results/combined_stress_table.tex}
 
 The strongest non-oracle baseline is \texttt{conformal\_risk\_filter}. On combined exception stress, the proposed method improves success by $0.144 \pm 0.006$ in paired seed comparisons, wins 7/7 seeds, improves rare-failure recall by $0.138$, reduces contact-boundary error by $0.058$, reduces unsafe commitment by $0.013$, and reduces overtrust by $0.037$. The oracle remains substantially higher at $0.710 \pm 0.010$, so the benchmark is not saturated.
+
+At maximum stress level $0.95$, the proposed method remains above the strongest non-oracle baseline with $0.539 \pm 0.007$ success versus $0.389 \pm 0.009$, higher rare-failure recall ($0.505$ versus $0.355$), lower contact-boundary error ($0.224$ versus $0.291$), lower tail risk ($0.135$ versus $0.179$), lower unsafe commitment ($0.071$ versus $0.092$), and lower overtrust ($0.072$ versus $0.111$). This is still local evidence rather than external validation.
 
 \begin{figure}[t]
 \centering
@@ -115,7 +120,10 @@ The evidence is strong enough to justify continued work but not submission. The 
 
 The terminal decision for this rebuild is therefore \textbf{STRONG\_REVISE}. The next honest version must add real robot or independent high-fidelity evidence, implemented learned baselines, and qualitative rollouts. Without that evidence, the paper should not be submitted to ICLR main.
 
+\begingroup
+\raggedright
 \bibliographystyle{iclr2026_conference}
 \bibliography{references}
+\endgroup
 
 \end{document}
