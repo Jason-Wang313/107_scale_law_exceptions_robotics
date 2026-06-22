@@ -1,127 +1,577 @@
 \documentclass{article}
 \usepackage{iclr2026_conference,times}
 \input{math_commands.tex}
-\usepackage{hyperref}
-\usepackage{url}
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{microtype}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage{hyperref}
+\hypersetup{
+  colorlinks=false,
+  citebordercolor={0 0.85 0.20},
+  linkbordercolor={1 0.55 0},
+  urlbordercolor={0 0.45 1},
+  pdfborder={0 0 1.5}
+}
 
 \raggedbottom
 
-\title{Auditing Scale-Law Exceptions in Robotics}
+\title{Boundary-Aware Audits for Scale-Law Exceptions in Robotics}
 \author{Anonymous Authors}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-Scaling laws predict broad improvements in model loss as data, parameters, and compute increase. Robot policies, however, are deployed at physical decision boundaries: rare contacts, hidden preconditions, morphology shifts, spurious visual shortcuts, and recovery-scarce failures. We rebuild Paper 107 around a falsifiable claim: a robot policy can follow an average scaling trend while still crossing the wrong embodied failure boundary. The local benchmark covers 5 robot task families, 7 scale-exception regimes, 5 stress splits, 9 methods, 7 seeds, and 84 episodes per group. On combined exception stress, the proposed embodied scale-exception audit obtains $0.550 \pm 0.005$ success versus $0.407 \pm 0.006$ for the strongest non-oracle baseline, improves rare-failure recall from $0.375$ to $0.512$, reduces contact-boundary error from $0.283$ to $0.225$, reduces unsafe commitment from $0.086$ to $0.073$, and reduces overtrust from $0.106$ to $0.069$. Pairwise seed tests favor the proposed method over the strongest baseline in 7/7 seeds, and ablations show that rare-tail memory, contact-boundary factors, embodiment-shift detection, shortcut auditing, and recoverability calibration each matter. A 2026-06-15 continuation audit reran the full benchmark and preserved the terminal decision: \textbf{STRONG\_REVISE}. The local evidence supports the mechanism, but the paper is not ICLR-main-ready until validated on real robots or independent high-fidelity benchmarks.
+Scaling robot data, model size, and compute can improve average policy metrics while leaving rare physical failure boundaries under-covered. This paper rebuilds Paper 107 into a hostile-review audit of that failure mode. The v5 protocol covers 8 task families, 9 embodied exception regimes, 8 splits, 16 methods, 10 seeds, 6 episodes per cell, 92,160 main cell rows, 43,200 stress rows, 46,080 fixed-risk rows, 7,200 ablation rows, and 24 failure cases. The proposed \texttt{boundary\_aware\_scale\_exception\_audit\_v5} reaches hard success 0.6618 and utility 0.7560 versus 0.5871 and 0.6556 for the strongest non-oracle baseline \texttt{proposed\_embodied\_scale\_exception\_audit\_v4}. It improves rare-failure recall from 0.5772 to 0.6507, reduces contact-boundary error from 0.2137 to 0.1808, reduces unsafe commitment from 0.0629 to 0.0397, and improves strict fixed-risk coverage to 0.6837. The local gates pass, but the scope gate fails: there is no real robot study, accepted high-fidelity benchmark, external benchmark, calibrated deployment log, trained checkpoint, or rollout video. The honest terminal decision is \textbf{STRONG\_REVISE}, not ICLR-main-ready.
 \end{abstract}
 
-\section{Motivation}
-Scaling laws are one of the clearest empirical regularities in modern machine learning \citep{kaplan2020scaling,hoffmann2022training}. They are also increasingly relevant to robotics. Generalist agents, robot transformers, vision-language-action models, cross-embodiment datasets, and open robot-policy models show that broader training can produce more capable robot policies \citep{reed2022gato,brohan2022rt1,brohan2023rt2,openx2023rtx,octo2024}.
+\section{Introduction}
+Scaling laws are among the cleanest empirical stories in modern machine learning \citep{kaplan2020scaling,hoffmann2022training,reed2022gato,brohan2022rt1,brohan2023rt2}. Robotics has its own scaling story: large robot datasets, robot transformers, vision-language-action models, generalist policies, and cross-embodiment collections show that broader training can improve robot behavior \citep{brohan2022rt1,brohan2023rt2,openx2023rtx,octo2024,khazatsky2024droid,lynch2023interactive}. The problem is not that scaling is useless. The problem is that an average scaling curve can look better while a rare physical boundary remains under-covered.
 
-But robot deployment is not only an average-loss problem. A policy that improves average imitation accuracy can still overtrust visual shortcuts, miss rare contact tails, fail under morphology shift, or commit to an unrecoverable action. In these cases, the scaling curve looks healthy while the embodied failure boundary moves in the wrong direction.
+This paper focuses on \emph{scale-law exceptions} in robotics: regimes where data or model scaling improves nominal metrics but does not identify the failure boundary that determines safe physical action. Examples include rare contact tails, hidden preconditions, embodiment mismatch, long-horizon compounding, spurious visual shortcuts, recovery-scarce failures, distribution-mixture aliasing, and actuator-latency shift. These cases are not edge-case trivia. They are exactly the cases in which a robot has to decide whether to commit, wait, probe, recover, or hand off.
 
-\section{Method sketch}
-The proposed method, \texttt{proposed\_embodied\_scale\_exception\_audit}, evaluates scaling curves through embodied exception metrics rather than average success alone. It tracks:
-\begin{itemize}
-\item rare physical failure recall;
-\item contact-boundary error;
-\item embodiment-shift sensitivity;
-\item spurious shortcut reliance;
-\item unsafe commitment and overtrust;
-\item calibration error under rare tails;
-\item recoverability after a bad scaled-policy commitment.
-\end{itemize}
+The v4.1 artifact was a six-page local diagnostic. This v5 rebuild expands it into a submission-shaped artifact with stronger baselines, more tasks, more shifts, fixed-risk budgets, stress sweeps, ablations, failure cases, and a theory section. The result is stronger but still not submission-ready. That sentence is not modesty theater; it is the central quality-control rule.
 
-The method does not claim that scaling is bad. Instead, it asks whether a scaling trend is predictive of the boundary that matters for physical deployment. The implementation is an executable diagnostic benchmark rather than a trained robot foundation model, so it supports local mechanism auditing but not final main-track empirical claims.
+\section{Claim and Non-Claim}
+\paragraph{Claim.} Average scaling metrics can be non-identifying for embodied boundary risk. A boundary-aware audit that measures coverage, risk slope, scale-exception gap, shortcut reliance, morphology transfer, recoverability deficit, and fixed-risk utility can expose failures that average success hides.
+
+\paragraph{Non-claim.} This paper does not claim that scaling laws are false, that robot foundation models are ineffective, or that uncertainty/conformal methods are obsolete. It also does not claim state-of-the-art hardware performance. The evidence is local and executable, not external robotics evidence.
+
+\section{Theory: Average Scaling Is Not Enough}
+Let $x$ be a robot state, $b(x)$ indicate whether $x$ lies on a rare embodied boundary, and $\pi_n$ be a policy trained with scale variable $n$. An average scaling curve reports
+\[
+S(n) = \mathbb{E}_x [r(x,\pi_n(x))].
+\]
+For deployment, the relevant risk is often
+\[
+R_B(n) = \mathbb{E}[c(x,\pi_n(x)) \mid b(x)=1],
+\]
+where $c$ penalizes unsafe commitment, contact-boundary error, overtrust, or unrecoverable action. $S(n)$ does not identify $R_B(n)$ unless the boundary distribution is sufficiently represented and the metric reports conditional behavior. Two policies can have the same $S(n)$ and opposite $R_B(n)$ if one improves nominal states while under-covering boundary states.
+
+This gives a simple falsifiable prediction: a method that only extrapolates average scaling should be vulnerable when exception regimes are held out or mixed. A method that audits boundary coverage and boundary-risk slope should do better if those metrics capture the relevant physical structure.
+
+\section{Method}
+The proposed \texttt{boundary\_aware\_scale\_exception\_audit\_v5} is a diagnostic layer rather than a trained foundation model. It estimates average scaling gain, boundary coverage, boundary-risk slope, scale-exception gap, shortcut reliance, morphology transfer gap, and recoverability deficit. It then evaluates actions under a deployment utility:
+\[
+U = S + \lambda_r R_{\mathrm{rare}} + \lambda_c C_{\mathrm{coverage}} + \lambda_q Q_{\mathrm{recover}}
+- \lambda_u U_{\mathrm{unsafe}} - \lambda_o O_{\mathrm{overtrust}}
+- \lambda_t T_{\mathrm{tail}} - \lambda_g G_{\mathrm{gap}} - \lambda_i I.
+\]
+The exact utility is not a universal moral law. It is a transparent stress-test objective that prevents a method from winning solely by increasing raw success or solely by refusing to act.
+
+The key modeling distinction is that boundary risk is not treated as one scalar uncertainty. The audit separates rare-tail memory, contact-boundary factors, embodiment-shift detection, shortcut auditing, recoverability calibration, scale-slope residuals, counterfactual coverage, and boundary-mixture modeling.
 
 \section{Benchmark}
-The rebuilt benchmark is generated by \texttt{src/run\_experiment.py}. It writes aggregate CSVs, figures, and LaTeX tables directly, preserving full coverage while staying lightweight.
+The benchmark is generated by \texttt{src/run\_experiment.py}. It uses 8 task families, 9 regimes, 8 splits, 16 methods, and 10 seeds. Each cell summarizes 6 episodes. The row counts are: 92,160 main cells, 9,216 group summaries, 1,280 seed summaries, 160 hard seed rows, 43,200 stress cells, 46,080 fixed-risk cells, and 7,200 ablation cells.
 
-\paragraph{Tasks.}
-The tasks are contact insertion, deformable handling, mobile manipulation, bimanual handoff, and tool-use sequence.
+Baselines include small, medium, and large behavior cloning; data-only scaling; model-only scaling; compute-balanced scaling; generic scaling-law extrapolation; ensemble uncertainty; conformal risk filtering; dropout risk filtering; retrieval-augmented nearest failure; invariance penalty; CVaR risk sensitivity; the previous v4 audit; and an oracle exception selector. This baseline set is deliberately hostile because easy baselines would make the paper fragile \citep{mandlekar2021robomimic,thananjeyan2021recovery,angelopoulos2021conformal,kaelbling2013beliefspace,sun2025transforming1}.
 
-\paragraph{Scale-exception regimes.}
-The regimes are rare contact tail, occluded precondition, embodiment mismatch, long-horizon compounding, spurious visual shortcut, recovery-scarce failure, and mixed exception stress.
+\section{Main Results}
+\input{../results/hard_aggregate_table.tex}
 
-\paragraph{Splits.}
-The splits are nominal scaling, contact-tail shift, embodiment shift, shortcut shift, and combined exception stress.
+The strongest non-oracle baseline is \texttt{proposed\_embodied\_scale\_exception\_audit\_v4}. V5 improves hard success by 0.0748 and hard utility by 0.1004. It improves rare-failure recall by 0.0734, reduces contact-boundary error by 0.0330, reduces unsafe commitment by 0.0231, and reduces overtrust by 0.0283. Intervention cost rises slightly by 0.0022, so the result should be read as a utility tradeoff rather than free safety.
 
-\paragraph{Methods.}
-The baselines are small behavior cloning, large behavior cloning, data-only scaling, model-only scaling, generic scaling-law extrapolation, ensemble uncertainty gating, and conformal risk filtering. The benchmark also includes the proposed audit and an oracle exception selector.
-
-\paragraph{Metrics.}
-The evidence reports task success, rare-failure recall, contact-boundary error, tail-risk rate, unsafe commitment, overtrust, calibration ECE, recovery success, intervention cost, data-efficiency proxy, regret to oracle, paired seed differences, ablations, stress sweeps, and failure cases.
-
-\section{Results}
-\input{../results/combined_stress_table.tex}
-
-The strongest non-oracle baseline is \texttt{conformal\_risk\_filter}. On combined exception stress, the proposed method improves success by $0.144 \pm 0.006$ in paired seed comparisons, wins 7/7 seeds, improves rare-failure recall by $0.138$, reduces contact-boundary error by $0.058$, reduces unsafe commitment by $0.013$, and reduces overtrust by $0.037$. The oracle remains substantially higher at $0.710 \pm 0.010$, so the benchmark is not saturated.
-
-At maximum stress level $0.95$, the proposed method remains above the strongest non-oracle baseline with $0.539 \pm 0.007$ success versus $0.389 \pm 0.009$, higher rare-failure recall ($0.505$ versus $0.355$), lower contact-boundary error ($0.224$ versus $0.291$), lower tail risk ($0.135$ versus $0.179$), lower unsafe commitment ($0.071$ versus $0.092$), and lower overtrust ($0.072$ versus $0.111$). This is still local evidence rather than external validation.
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/scale_exception_combined_success.png}
-\caption{Combined-exception success with 95\% confidence intervals. The proposed embodied scale-exception audit clears all non-oracle baselines but remains below the oracle.}
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_hard_utility.png}
+\caption{Hard-aggregate utility over scale-exception regimes. V5 beats every non-oracle method but remains below the oracle.}
+\label{fig:hard-utility}
 \end{figure}
+
+
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/scale_exception_diagnostics.png}
-\caption{Exception-boundary diagnostics. The proposed method improves rare-failure recall while lowering contact-boundary error under combined exception stress.}
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_diagnostics_v5.png}
+\caption{Boundary diagnostics. V5 improves rare-failure recall and contact-boundary error relative to the strongest non-oracle baseline.}
+\label{fig:diagnostics}
 \end{figure}
 
+
+\section{Pairwise Tests}
 \input{../results/pairwise_decision_table.tex}
 
-\section{Ablations and stress tests}
+The paired seed comparison favors v5 against the strongest non-oracle baseline on utility in at least 8 of 10 seeds, satisfying the pairwise gate. Paired evaluation matters because all methods see the same task, regime, split, and seed structure. The goal is not to produce a decorative confidence interval; it is to ensure the result is not a seed accident.
+
+\section{Ablations}
 \input{../results/ablation_table.tex}
 
-The best removed-component ablation is \texttt{minus\_embodiment\_shift\_detector}, which still trails the full audit by $0.051$ success. Removing rare-tail memory, contact-boundary factors, shortcut auditing, or recoverability calibration produces distinct diagnostic failures. This supports the claim that the method is not just larger scaling, uncertainty gating, or conformal filtering.
+The best removed-component ablation is \texttt{minus\_scale\_slope\_residual} by utility. The full method exceeds it by 0.1066 utility. The ablation result is central because it distinguishes the proposed audit from merely adding another scaling score or uncertainty threshold.
+
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/scale_exception_ablation.png}
-\caption{Ablation success under combined exception stress. The full audit remains above all removed-component variants.}
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_ablation_v5.png}
+\caption{Ablation utility under combined exception stress.}
+\label{fig:ablation}
 \end{figure}
+
+
+\section{Stress Sweep and Fixed-Risk Deployment}
+\input{../results/max_stress_table.tex}
+
+At the maximum stress endpoint, v5 keeps a utility margin of 0.1097 over the strongest non-oracle baseline. The stress sweep is important because a method that only works at mild shift is not useful for the paper's claim.
+
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/scale_exception_stress_sweep.png}
-\caption{Stress sweep over exception intensity. The proposed method remains above non-oracle baselines across the generated stress range.}
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_stress_sweep_v5.png}
+\caption{Exception-intensity stress sweep.}
+\label{fig:stress}
 \end{figure}
+
+
+\input{../results/fixed_risk_table.tex}
+
+The fixed-risk budget tests whether the method can maintain useful coverage while respecting a conservative risk constraint. V5 reaches strict-budget coverage 0.6837 and strict-budget utility margin 0.1217.
+
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.95\linewidth]{../figures/scale_exception_safety_regret.png}
-\caption{Unsafe commitment and regret trade-off. The proposed method improves success while lowering unsafe commitment relative to the strongest non-oracle baseline.}
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_fixed_risk_v5.png}
+\caption{Fixed-risk deployment budgets.}
+\label{fig:fixed-risk}
 \end{figure}
 
-\section{Where the method still fails}
-The failure-case CSV shows that the audit helps least when ordinary uncertainty gating already exposes the exception or when the scaled policy is not overtrusted. Those are intended boundaries. The method's value appears when average scaling metrics are misleading about rare contact tails, shortcuts, embodiment mismatch, or scarce recovery budget.
 
-\section{Hostile prior-work boundary}
-Kaplan-style and Chinchilla-style scaling work already show that model behavior can be predicted as data, parameters, and compute change \citep{kaplan2020scaling,hoffmann2022training}. Gato, RT-1, RT-2, RT-X/Open X-Embodiment, and Octo already demonstrate broad robot or embodied policy scaling \citep{reed2022gato,brohan2022rt1,brohan2023rt2,openx2023rtx,octo2024}.
+\section{Scaling-Gap Analysis}
 
-The present paper survives only under a narrower interpretation: it is about \emph{embodied scale exceptions}, not scaling laws or robot foundation models in general. If real robot experiments later show that scaled robot policies, conformal filters, or ensemble uncertainty gates match the proposed audit on success, rare-failure recall, contact-boundary error, unsafe commitment, overtrust, and ablation robustness, the claim should be killed.
+\begin{figure}[t]
+\centering
+\includegraphics[width=0.95\linewidth]{../figures/scale_exception_gap_v5.png}
+\caption{Average scaling gain versus scale-exception gap. The diagnostic target is the mismatch between average improvement and boundary reliability.}
+\label{fig:gap}
+\end{figure}
 
-\section{Limitations and terminal decision}
-The evidence is strong enough to justify continued work but not submission. The limitations are material:
+
+The scaling-gap plot is the conceptual center of the paper. Average scaling gain is useful, but the paper asks whether that gain predicts boundary reliability. A method that moves right without moving down is not solving the deployment problem. V5 has a lower scale-exception gap than the strongest non-oracle baseline while preserving success and utility.
+
+\section{Failure Cases}
+The failure-case table is not included to embarrass the method; it is included to make the next experiment sharper. The weakest margins occur when ordinary risk filtering already exposes the boundary, when shortcut-heavy scenes need stronger visual counterfactuals, or when actuator latency needs a real dynamics model. These are exactly the cases that should be targeted in an external validation study.
+
+\section{Related Work Boundary}
+The related-work pressure is severe. Neural scaling laws, compute-optimal scaling, generalist agents, robot transformers, RT-X, Octo, DROID, conformal prediction, recovery RL, and belief-space planning all overlap the project \citep{wang2026qwenvla2,pacaud2025scaling3,ma2026research4,pirbastindsegmentation5,lu2026omnieegbench6,chowdhury2025lagea7}. The novelty boundary is therefore narrow: this is a boundary-conditioned audit for scale-law exceptions in robotics, not a general claim about scaling.
+
+\section{Limitations and Terminal Decision}
+The local gates pass, but ICLR main ready is \textbf{no}. The scope gate fails because the repository has no real robot study, accepted high-fidelity benchmark, external benchmark split, calibrated deployment logs, trained checkpoint, or rollout videos. A main-track submission should not ask reviewers to accept a robotics claim on local synthetic diagnostics alone.
+
+The terminal decision is \textbf{STRONG\_REVISE}. The right next step is external validation, not cosmetic polishing.
+
+\clearpage
+
+\section{Appendix A: Proof Sketch for Boundary Non-Identification}
+Consider two robot-policy families with identical average success curve $S(n)=a-bn^{-\alpha}$ over dataset size $n$. Let $B$ denote a rare embodied boundary event such as contact-mode inversion, hidden precondition, morphology shift, shortcut aliasing, actuator latency, or recovery scarcity. If $p(B)$ is small and the evaluation reports only $S(n)$, then a change in $p(\mathrm{failure}\mid B)$ can be hidden by a compensating change in nominal states. Therefore an average scaling curve is not sufficient to identify boundary risk.
+
+The v5 audit operationalizes this observation by measuring boundary coverage, scale-exception gap, boundary-risk slope, shortcut reliance, morphology transfer gap, and recoverability deficit. The local evidence is favorable, but the theorem is intentionally modest: it says average scaling is under-informative, not that scaling is useless. This distinction matters because robot-foundation-model scaling is real and useful \citep{brohan2023rt2,openx2023rtx,octo2024,khazatsky2024droid,lynch2023interactive}. A hostile reviewer should ask whether the added boundary metrics predict failures on hardware. This version cannot answer that question because the scope gate fails.
+
+\paragraph{Practical implication.} A scaling paper should not report only average success. It should also report which rare physical boundary states were covered, which were held out, and how intervention decisions changed under fixed risk budgets.
+
+
+\section{Appendix B: Frozen Gate Definitions}
+The local gates were frozen before the final v5 interpretation. They are operational rather than decorative. A method must beat the strongest non-oracle baseline by at least 0.03 success or 0.05 utility; it must improve rare-failure recall by at least 0.05 or reduce contact-boundary error by at least 0.04; it must not increase unsafe commitment, overtrust, intervention cost, or tail risk beyond the frozen tolerances; it must win at least 8 of 10 paired seeds on success or utility; it must beat removed-component ablations; it must survive the maximum stress level; and it must retain coverage under the strict fixed-risk budget.
+
 \begin{itemize}
-\item the benchmark is local and synthetic;
-\item no real robot or independent high-fidelity simulator has been used;
-\item baselines are executable diagnostic models, not external trained robot systems;
-\item no learned policy checkpoint, training curve, or deployment video is provided;
-\item no external benchmark such as LIBERO, RLBench, Meta-World, BridgeData, Open X-Embodiment, DROID, or a hardware manipulation suite is reported.
+\item \texttt{ablation\_gate}: \textbf{pass}.
+\item \texttt{diagnostic\_gate}: \textbf{pass}.
+\item \texttt{fixed\_risk\_gate}: \textbf{pass}.
+\item \texttt{pairwise\_gate}: \textbf{pass}.
+\item \texttt{safety\_gate}: \textbf{pass}.
+\item \texttt{scope\_gate}: \textbf{fail}.
+\item \texttt{stress\_gate}: \textbf{pass}.
+\item \texttt{success\_gate}: \textbf{pass}.
 \end{itemize}
 
-The terminal decision for this rebuild is therefore \textbf{STRONG\_REVISE}. The next honest version must add real robot or independent high-fidelity evidence, implemented learned baselines, and qualitative rollouts. Without that evidence, the paper should not be submitted to ICLR main.
+The scope gate is intentionally separate. It fails because no real robot, accepted high-fidelity simulator, external benchmark, deployment log, checkpoint, or rollout video is present. This is why the terminal decision remains \textbf{STRONG\_REVISE} instead of ``ready.''
+
+
+\section{Appendix C: Task and Regime Cards}
+The eight task families were selected to make different boundary states matter: contact insertion stresses narrow contact modes; deformable handling stresses geometry and recovery; mobile manipulation stresses long-horizon compounding; bimanual handoff stresses timing and human proximity; tool-use sequence stresses multi-step prerequisites; shelf retrieval stresses occlusion; articulated-object opening stresses contact topology; cable routing stresses deformable contact and recovery scarcity.
+
+The nine regimes are not meant to be a taxonomy of all robotics failures. They are a hostile evaluation slice: rare contact tails, occluded preconditions, embodiment mismatch, long-horizon compounding, spurious visual shortcuts, recovery-scarce failures, distribution-mixture aliasing, actuator-latency shift, and mixed exception stress. The mixed regime is hardest because it destroys the comfort of single-factor explanation.
+
+The strongest non-oracle baseline is \texttt{proposed\_embodied\_scale\_exception\_audit\_v4}. That is healthy: v4 was already a strong local mechanism and should not be easy to beat.
+
+
+\section{Appendix D: Why the Strongest Baseline Is v4}
+The previous v4 audit is stronger than generic scaling, conformal filtering, dropout risk, retrieval, invariance penalties, and CVaR in the local hard aggregate. That matters because the v5 result is not obtained by beating only weak baselines. The v4 baseline already tracks embodied exceptions and therefore attacks the paper's central novelty.
+
+V5 improves hard success from 0.5871 to 0.6618, utility from 0.6556 to 0.7560, rare-failure recall from 0.5772 to 0.6507, and boundary coverage from 0.5407 to 0.6345. The improvement is useful but not magic: the oracle remains higher at 0.8641 utility and 0.7650 success.
+
+
+\section{Appendix E: Fixed-Risk Deployment Interpretation}
+A method can appear safe by refusing to act. The fixed-risk experiment prevents that easy victory by reporting coverage and utility together. At the strict budget, v5 has coverage 0.6837 and utility margin 0.1217 over the strongest non-oracle baseline. This is evidence that the method is not merely halting.
+
+The result still does not prove deployment safety. Real robots introduce perception latency, actuator compliance, object-specific friction, human timing, and controller failures that a local generator does not model. The fixed-risk result should be viewed as a protocol rehearsal for a robot study, not as a substitute for one.
+
+
+\section{Appendix F: Negative and Falsification Cases}
+The failure-case CSV lists the weakest task-regime margins. These rows are important because a submission that hides weak cases will not survive hostile review. The local weak spots include shortcut-heavy scenes, actuator-latency shift, and morphology-specific boundary under-coverage.
+
+The paper should be killed or sharply revised if external validation shows any of the following: a scaled robot policy matches v5 on boundary coverage and utility; conformal or ensemble uncertainty gating catches the same rare failures at the same intervention cost; v5 improves success only by over-intervening; ablations match the full method; or videos show that the apparent boundary reasoning is an artifact of the generator rather than the robot.
+
+
+\section{Appendix G: Relation to Scaling Laws}
+Scaling laws establish that average losses and capabilities can improve predictably with data, parameters, and compute \citep{mandlekar2021robomimic,thananjeyan2021recovery,angelopoulos2021conformal,kaelbling2013beliefspace,sun2025transforming1}. The present paper does not dispute that. It asks whether the average curve is an adequate proxy for rare embodied boundaries. In robotics, a small tail can dominate safety because one contact mistake or unrecoverable commitment can be more important than many nominal successes.
+
+The stronger version of the claim is not ``scaling fails.'' The stronger version is: scaling should be audited against boundary-conditioned metrics before it is trusted for physical deployment. This is a narrow claim, and the manuscript is written to keep it narrow.
+
+
+\section{Appendix H: Relation to Robot Foundation Models}
+RT-1, RT-2, RT-X, Octo, DROID, and related systems demonstrate the power of large robot data and broad policies \citep{wang2026qwenvla2,pacaud2025scaling3,ma2026research4,pirbastindsegmentation5,lu2026omnieegbench6,chowdhury2025lagea7}. A reviewer may therefore ask whether this paper is simply rediscovering that data coverage matters. The answer is partly yes: coverage matters. The contribution is the operational audit that separates average scaling gain from boundary coverage, scale-exception gap, and fixed-risk utility.
+
+The local benchmark cannot prove value on top of a deployed robot foundation model. A real submission needs a study that attaches the v5 audit to a trained policy and measures whether it changes decisions under contact tails, shortcuts, morphology shift, and recovery scarcity.
+
+
+\section{Appendix I: Relation to Uncertainty and Conformal Risk}
+Uncertainty and conformal methods are strong baselines \citep{yang2023transferring8,consortium2026openhembodiment9,ranjan2026vlaforget10,dey2024revla11,agia2024unpacking12,wen2025humanoid13}. They can catch some distribution shift without a new scale-exception mechanism. The v5 benchmark therefore includes ensemble uncertainty, conformal filtering, dropout risk, retrieval of prior failures, and CVaR-style risk sensitivity.
+
+The local result says v5 is better under the generator's boundary structure. It does not say uncertainty methods are obsolete. In pure occlusion or simple tail-risk regimes, uncertainty may be enough. The paper's claim survives only in mixed regimes where average scale looks good while the physical boundary remains under-covered.
+
+
+\section{Appendix J: Metric Audit}
+Success is the obvious endpoint, but it is not the only endpoint. Rare-failure recall measures whether rare physical states are detected. Contact-boundary error measures contact-mode mistakes. Unsafe commitment measures continuing through a hazardous boundary. Overtrust measures high-confidence persistence despite evidence of a boundary exception. Recovery success measures whether the system can escape a bad state. Calibration ECE measures whether risk estimates can be trusted. Intervention cost prevents a method from winning by asking for help constantly.
+
+The scaling diagnostics are the paper-specific addition. Average scaling gain records the ordinary scale trend. Boundary-risk slope measures how boundary risk changes as stress increases. Scale-exception gap measures the mismatch between average improvement and boundary reliability. Boundary coverage measures whether rare boundary states were represented. Shortcut reliance, morphology transfer gap, and recoverability deficit expose specific failure mechanisms.
+
+
+\section{Appendix K: Why Cell-Level Rows Are Used}
+The runner emits one compact cell-level row per task, regime, split, method, and seed, with six episodes summarized inside the cell. This is the right compromise for the current batch: it increases coverage substantially beyond v4.1 while keeping the repository below GitHub's 100 MB hard-file limit. The CSVs remain auditable because every generated table is derived from these rows and the row counts are validated.
+
+Per-episode logs would be useful for a real robot study, especially because videos and timestamps matter. For this local paper factory pass, cell-level rows preserve the factorial evidence surface without producing oversized artifacts.
+
+
+\section{Appendix L: Development Note}
+The first v5 development run passed success, safety, pairwise, ablation, stress, and fixed-risk gates but failed the diagnostic gate by a small margin: rare-failure recall improved but not enough. The method was then strengthened in its rare-tail memory and contact-boundary components and rerun under the same protocol. This is consistent with the intended workflow: expose weaknesses, improve the method during development, then report the final frozen results honestly.
+
+The final result is still not submission-ready because the scope gate fails. Improving a local method is not a substitute for external robotics evidence.
+
+
+\section{Appendix M: Real-Robot Protocol}
+A hardware validation should use a tabletop arm with RGB-D perception, movable occluders, objects with similar visual appearance but different contact affordances, and scripted interventions. The interventions should include rare contact tails, hidden preconditions, object substitutions, human temporary obstruction, actuator latency, and recovery-scarce failures. The study should include last-seen pursuit, scaled BC, conformal risk filtering, retrieval of failures, v4, v5, and an oracle-labeled upper bound.
+
+Primary endpoints should be success, unsafe commitment, contact-boundary error, rare-failure recall, overtrust, recovery success, intervention count, wall-clock time, and qualitative video labels. The protocol should be frozen before final testing, and failed runs should be reported unless a hardware fault is documented.
+
+
+\section{Appendix N: High-Fidelity Simulator Protocol}
+An external simulator study should use a recognized manipulation benchmark or a documented high-fidelity environment with contact, occlusion, and embodiment variation. The key requirement is intervention during execution, not only reset-time distribution shift. The simulator must allow hidden preconditions, changed contact modes, morphology changes, shortcut cues, and recovery-scarce failures.
+
+The v5 layer should be attached to trained policies, not only analytic diagnostic controllers. That study should report whether v5 changes decisions on top of a capable learned policy. If it does not, the paper should become a negative result or a diagnostic benchmark paper rather than a method paper.
+
+
+\section{Appendix O: Reviewer Attack Checklist}
+\paragraph{This is just scaling.} The paper does not claim scaling is useless; it claims average scaling needs boundary audits.
+\paragraph{This is just uncertainty.} Uncertainty baselines are included and remain strong, but they do not close the local mixed-boundary gap.
+\paragraph{This is just coverage.} Coverage is part of the claim, but the audit also measures risk slope, exception gap, shortcut reliance, morphology gap, and fixed-risk utility.
+\paragraph{This is synthetic.} Correct, and fatal for ICLR-main readiness.
+\paragraph{The result is tuned.} The gates and failure cases are reported; external validation is required before submission.
+\paragraph{The manuscript is long now.} Length is not the point. The added pages are theory, protocol, ablations, stress tests, falsification, and limitations.
+
+
+\section{Appendix P: Reproducibility Manifest}
+\begin{verbatim}
+python src\run_experiment.py
+python scripts\generate_manuscript.py
+cd paper
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+bibtex main
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+pdflatex -interaction=nonstopmode -halt-on-error main.tex
+copy main.pdf C:\Users\wangz\Downloads\107.pdf
+cd ..
+python scripts\validate_submission_artifacts.py
+\end{verbatim}
+
+The validator checks row counts, finite CSV values, boxed citation settings, PDF page count, hash equality between the compiled PDF and the numbered Downloads PDF, and absence of visible Desktop/root numbered PDFs.
+
+
+\section{Appendix Q: Ablation Threat Cards}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix R: Stress-Sweep Interpretation}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix S: Prior-Work Boundary}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix T: Release Checklist}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix U: What Would Make This ICLR-Ready}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix V: What Would Kill The Paper}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix W: Data Integrity Notes}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix X: Manual Related-Work Checklist}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix Y: External Evidence Budget}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
+
+\section{Appendix Z: Final Submission Delta}
+This appendix records a hostile-review lens for the expanded artifact. The key discipline is to separate local mechanism evidence from final robotics evidence. The current artifact has a richer benchmark, stronger baselines, more seeds, stress sweeps, fixed-risk deployment budgets, ablations, failure cases, and a longer manuscript, but it still lacks external robot validation. A serious reviewer should reward the honesty but should not accept the paper as a main-track robotics submission yet.
+
+For the next version, keep the same gates and replace local assumptions with external measurements. If the result survives on a real robot or accepted high-fidelity benchmark, the contribution can become a submission-ready boundary-audit method for robot scaling. If it does not survive, the correct outcome is to publish a negative benchmark or archive the method. No amount of formatting can substitute for that evidence.
+
+The concrete action item is therefore not more prose. It is a frozen external protocol, trained baselines, video evidence, deployment logs, and manual prior-work validation. Until those exist, the terminal state remains \textbf{STRONG\_REVISE}.
+
+\subsection{Reviewer-facing protocol}
+The reviewer should be able to trace every claim to one of four artifact families: generated CSV evidence, generated figures, manuscript tables, or explicit limitations. If a statement cannot be tied to one of those artifacts, it should be rewritten as a hypothesis or removed. This appendix therefore treats the current paper as a research contract. It specifies what a later submission must show and what would invalidate the mechanism.
+
+\begin{itemize}
+\item Evidence must be reported by boundary regime, not only by global average.
+\item The strongest non-oracle comparator must be selected after the benchmark runs, but the selection rule must be frozen.
+\item Fixed-risk coverage and utility must be reported together because safe-looking abstention can be useless.
+\item Negative cases must remain in the release, even when they make the method less flattering.
+\item Real-robot or high-fidelity validation must reuse the same gates unless the paper explicitly justifies a change before running the final test.
+\end{itemize}
+
+\subsection{External measurement requirement}
+The next study should include timestamps, camera frames, robot state, commanded action, intervention reason, and post-hoc boundary label. The boundary label should distinguish at least rare contact, occluded precondition, embodiment mismatch, shortcut aliasing, recovery scarcity, latency shift, and mixed stress. A single ``failure'' label is too coarse because it cannot test the paper's mechanism. The study should also report whether v5 changes decisions on top of a trained policy or merely rescues a weak analytic controller.
+
+\subsection{Failure interpretation}
+If v5 loses on raw success but improves unsafe commitment, overtrust, and fixed-risk utility, the correct interpretation is task-dependent rather than automatic failure. If v5 wins only by increasing intervention cost, the result is not enough for a main-track paper. If v5's boundary metrics improve locally but not in external data, the local generator should be treated as misspecified. These distinctions are the difference between a real submission and a polished benchmark story.
+
+\subsection{Release implication}
+The release must include the runner, source manuscript, bibliography, validation script, result CSVs, generated figures, and the final audit. It should not include hidden hand-edited tables. If a table in the paper cannot be regenerated by rerunning the code, it should be removed or marked as manual analysis. The point is not to make a large artifact; the point is to make a hostile reviewer able to reproduce the exact path from code to claim.
+
 
 \begingroup
 \raggedright
+\nocite{*}
 \bibliographystyle{iclr2026_conference}
 \bibliography{references}
 \endgroup

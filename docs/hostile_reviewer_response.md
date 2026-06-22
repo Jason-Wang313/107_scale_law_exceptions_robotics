@@ -4,20 +4,20 @@ Paper: 107 Scale-Law Exceptions in Robotics
 
 ## Strongest Technical Threats
 
-- Scaling-law papers already show predictable neural loss improvements under data/model/compute scaling.
-- Compute-optimal scaling already shows that scale must be balanced, not merely increased.
-- RT-1, RT-2, RT-X, Open X-Embodiment, DROID, and Octo already provide strong robot-foundation-model scaling evidence.
-- Ensemble uncertainty and conformal risk filtering already catch some deployment tails.
-- A reviewer may argue that "scale fails on tails" is too obvious unless the paper isolates an embodied mechanism.
+- Scaling-law and robot-foundation-model work already shows broad gains from more data, parameters, and compute.
+- RT-1, RT-2, RT-X, Octo, DROID, and related systems already provide strong robot scaling evidence.
+- Ensemble uncertainty, conformal prediction, retrieval of failures, invariance penalties, and CVaR risk sensitivity already address parts of the tail-risk problem.
+- A reviewer may argue that the benchmark generator favors the proposed boundary-aware audit.
+- A reviewer may reject the paper because it has no real robot/high-fidelity validation.
 
-## ICLR Main Response
+## v5 Response
 
-The v4 rebuild narrows the claim to embodied scale exceptions: cases where average scaling metrics improve while rare-failure recall, contact-boundary error, unsafe commitment, overtrust, or recovery scarcity regress. The local benchmark supports that narrower boundary. Proposed combined-exception success is `0.550 +/- 0.005` versus `0.407 +/- 0.006` for `conformal_risk_filter`; rare-failure recall improves by `0.138`; contact-boundary error drops by `0.058`; unsafe commitment and overtrust both decrease; and the strongest-baseline paired comparison is 7/7 seeds in favor of the proposed method.
+The v5 rebuild narrows the claim to boundary-conditioned scale exceptions, not generic scaling failure. The benchmark includes 16 methods and makes the strongest non-oracle comparator the previous v4 audit, not a weak straw baseline. V5 improves hard success from `0.58707` to `0.66184`, utility from `0.65560` to `0.75598`, rare-failure recall from `0.57725` to `0.65069`, contact-boundary error from `0.21372` to `0.18075`, unsafe commitment from `0.06290` to `0.03975`, overtrust from `0.05513` to `0.02679`, and strict fixed-risk coverage to `0.68370`.
 
 ## Remaining Hostile Review
 
-A hostile reviewer would still be right to reject a main-track submission today if it claimed deployment readiness. The evidence is local and synthetic; the baselines are diagnostic executable models rather than external robot systems; and there is no real robot or independently validated high-fidelity simulator result.
+A hostile reviewer would still be right to reject a main-track submission today if it claims deployment readiness. The evidence is local; the baselines are diagnostic executable models rather than external trained robot systems; and no real robot, accepted high-fidelity simulator, external benchmark, deployment logs, checkpoint, or rollout video is present.
 
 ## Honest Action
 
-The paper is marked `STRONG_REVISE`. Continue only if the next version adds real robot or high-fidelity external validation, implemented learned baselines, and qualitative rollouts.
+Mark the paper `STRONG_REVISE`. Continue only if the next version adds external robot/high-fidelity validation, trained baselines, qualitative rollouts, and manual related-work validation.

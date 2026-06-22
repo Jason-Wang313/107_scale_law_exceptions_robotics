@@ -1,11 +1,21 @@
 # Submission Readiness Decision
 
+Paper: 107 scale_law_exceptions_robotics
+
+Decision date: 2026-06-22 23:07:28 +08:00
+
 Decision: STRONG_REVISE
 
-ICLR main-conference readiness: NO.
+ICLR main ready: no
 
-The v4.1 continuation audit provides a paper-specific local benchmark for scale-law exceptions in robotics, with strong synthetic baselines, ablations, paired seed comparisons, stress sweeps, failure cases, finite CSV artifacts, and generated figures/tables. The evidence supports the mechanism: on combined exception stress, `proposed_embodied_scale_exception_audit` reaches `0.550 +/- 0.005` success versus `0.407 +/- 0.006` for the strongest non-oracle baseline, `conformal_risk_filter`.
+## Why It Is Stronger Than v4.1
 
-Diagnostic evidence also supports the mechanism. Rare-failure recall improves from `0.375` to `0.512`; contact-boundary error falls from `0.283` to `0.225`; unsafe commitment falls from `0.086` to `0.073`; overtrust falls from `0.106` to `0.069`; intervention cost falls from `0.246` to `0.217`; and paired seed comparisons favor the proposed method over the strongest baseline in 7/7 seeds.
+The paper now has a 28-page generated manuscript, explicit theory, bright boxed clickable citations, stronger baselines, expanded tasks/regimes/splits, 10 seeds, paired tests, ablations, stress sweeps, fixed-risk budgets, failure cases, validation scripts, Downloads-only numbered PDF validation, and visual PDF QA.
 
-The honest terminal action is strong-revise, not submit. A submission-quality revival still requires real robot or independent high-fidelity simulator validation, implemented learned baselines, and external benchmark evidence.
+## Why It Is Still Not Ready
+
+The scope gate fails. No real robot study, accepted high-fidelity benchmark, external benchmark split, calibrated deployment log, trained checkpoint, or rollout video exists. The local evidence is useful for development, but it is not enough for a final ICLR-main robotics submission.
+
+## Required Upgrade
+
+Add external validation with trained robot policies, preserve the same gates, report failures honestly, and include qualitative rollouts. If the external result preserves the v5 pattern, the paper can move toward submission. If it does not, the method should be downgraded or archived.

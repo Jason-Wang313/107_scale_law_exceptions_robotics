@@ -1,18 +1,26 @@
-Paper 107 scale_law_exceptions_robotics evidence rebuild
-Design: 5 tasks x 7 scale-exception regimes x 5 splits x 9 methods, 7 seeds, 84 episodes/group.
+Paper 107 scale_law_exceptions_robotics v5 expanded evidence rebuild
+Design: 8 tasks x 9 regimes x 8 splits x 16 methods, 10 seeds, 6 episodes/cell.
 Terminal decision: STRONG_REVISE
-Rationale: local scale-exception evidence supports the mechanism, but real robot/external validation is missing
+ICLR main ready: False
+Rationale: expanded local scale-exception evidence supports the mechanism, but the external robotics scope gate fails
 
-Combined-exception ranking:
-oracle_exception_selector: success=0.710 +/- 0.010, rare_recall=0.626, contact_error=0.180, tail_risk=0.083, unsafe=0.031, overtrust=0.022, ece=0.020, recovery=0.588, cost=0.223, regret=0.000
-proposed_embodied_scale_exception_audit: success=0.550 +/- 0.005, rare_recall=0.512, contact_error=0.225, tail_risk=0.132, unsafe=0.073, overtrust=0.069, ece=0.064, recovery=0.485, cost=0.217, regret=0.159
-conformal_risk_filter: success=0.407 +/- 0.006, rare_recall=0.375, contact_error=0.283, tail_risk=0.172, unsafe=0.086, overtrust=0.106, ece=0.121, recovery=0.343, cost=0.246, regret=0.303
-ensemble_uncertainty_gate: success=0.386 +/- 0.004, rare_recall=0.345, contact_error=0.300, tail_risk=0.183, unsafe=0.099, overtrust=0.128, ece=0.132, recovery=0.329, cost=0.243, regret=0.323
-generic_scaling_law_extrapolator: success=0.315 +/- 0.007, rare_recall=0.216, contact_error=0.334, tail_risk=0.245, unsafe=0.155, overtrust=0.231, ece=0.227, recovery=0.222, cost=0.183, regret=0.395
-data_only_scaling: success=0.295 +/- 0.007, rare_recall=0.227, contact_error=0.331, tail_risk=0.236, unsafe=0.151, overtrust=0.198, ece=0.202, recovery=0.232, cost=0.192, regret=0.415
-model_only_scaling: success=0.290 +/- 0.008, rare_recall=0.189, contact_error=0.345, tail_risk=0.250, unsafe=0.157, overtrust=0.233, ece=0.231, recovery=0.210, cost=0.193, regret=0.420
-large_behavior_clone: success=0.275 +/- 0.005, rare_recall=0.165, contact_error=0.359, tail_risk=0.260, unsafe=0.167, overtrust=0.241, ece=0.241, recovery=0.181, cost=0.189, regret=0.435
-small_behavior_clone: success=0.201 +/- 0.004, rare_recall=0.183, contact_error=0.351, tail_risk=0.252, unsafe=0.159, overtrust=0.153, ece=0.161, recovery=0.198, cost=0.196, regret=0.509
+Hard-aggregate ranking:
+oracle_exception_selector: success=0.7650 +/- 0.0032, utility=0.8641, rare_recall=0.6947, contact_error=0.1610, unsafe=0.0150, overtrust=0.0041, scale_gap=0.2981, coverage=0.6737, regret=0.0000
+boundary_aware_scale_exception_audit_v5: success=0.6618 +/- 0.0079, utility=0.7560, rare_recall=0.6507, contact_error=0.1808, unsafe=0.0397, overtrust=0.0268, scale_gap=0.2428, coverage=0.6345, regret=0.1594
+proposed_embodied_scale_exception_audit_v4: success=0.5871 +/- 0.0049, utility=0.6556, rare_recall=0.5772, contact_error=0.2137, unsafe=0.0629, overtrust=0.0551, scale_gap=0.2574, coverage=0.5407, regret=0.2151
+retrieval_augmented_nearest_failure: success=0.4658 +/- 0.0026, utility=0.4885, rare_recall=0.4424, contact_error=0.2663, unsafe=0.0971, overtrust=0.1076, scale_gap=0.2660, coverage=0.4397, regret=0.3175
+conformal_risk_filter: success=0.4504 +/- 0.0059, utility=0.4738, rare_recall=0.4285, contact_error=0.2788, unsafe=0.0827, overtrust=0.0864, scale_gap=0.2485, coverage=0.4188, regret=0.3318
+risk_sensitive_cvar_policy: success=0.4411 +/- 0.0061, utility=0.4664, rare_recall=0.4183, contact_error=0.2700, unsafe=0.0770, overtrust=0.0838, scale_gap=0.2355, coverage=0.3876, regret=0.3378
+invariance_penalty_policy: success=0.4540 +/- 0.0036, utility=0.4546, rare_recall=0.3639, contact_error=0.2763, unsafe=0.1093, overtrust=0.1170, scale_gap=0.2985, coverage=0.3820, regret=0.3273
+dropout_risk_filter: success=0.4338 +/- 0.0033, utility=0.4506, rare_recall=0.4044, contact_error=0.2812, unsafe=0.0889, overtrust=0.0961, scale_gap=0.2441, coverage=0.3991, regret=0.3475
+ensemble_uncertainty_gate: success=0.4234 +/- 0.0060, utility=0.4336, rare_recall=0.3968, contact_error=0.2877, unsafe=0.0947, overtrust=0.1054, scale_gap=0.2687, coverage=0.3895, regret=0.3552
+compute_balanced_scaling: success=0.3746 +/- 0.0040, utility=0.3320, rare_recall=0.2875, contact_error=0.3187, unsafe=0.1413, overtrust=0.1850, scale_gap=0.4064, coverage=0.2782, regret=0.4010
+generic_scaling_law_extrapolator: success=0.3532 +/- 0.0048, utility=0.2978, rare_recall=0.2491, contact_error=0.3202, unsafe=0.1502, overtrust=0.2084, scale_gap=0.4380, coverage=0.2507, regret=0.4202
+data_only_scaling: success=0.3339 +/- 0.0048, utility=0.2894, rare_recall=0.2694, contact_error=0.3214, unsafe=0.1474, overtrust=0.1831, scale_gap=0.3693, coverage=0.2604, regret=0.4370
+model_only_scaling: success=0.3218 +/- 0.0064, utility=0.2619, rare_recall=0.2242, contact_error=0.3322, unsafe=0.1581, overtrust=0.2083, scale_gap=0.4123, coverage=0.2364, regret=0.4496
+large_behavior_clone: success=0.3042 +/- 0.0032, utility=0.2364, rare_recall=0.1925, contact_error=0.3460, unsafe=0.1688, overtrust=0.2251, scale_gap=0.4222, coverage=0.2165, regret=0.4667
+medium_behavior_clone: success=0.2761 +/- 0.0044, utility=0.2304, rare_recall=0.2115, contact_error=0.3371, unsafe=0.1552, overtrust=0.1652, scale_gap=0.2713, coverage=0.2226, regret=0.4929
+small_behavior_clone: success=0.2312 +/- 0.0031, utility=0.1978, rare_recall=0.2147, contact_error=0.3371, unsafe=0.1645, overtrust=0.1307, scale_gap=0.1415, coverage=0.2071, regret=0.5362
 
 Gate outcomes:
 success_gate: True
@@ -20,31 +28,51 @@ diagnostic_gate: True
 safety_gate: True
 pairwise_gate: True
 ablation_gate: True
-success_margin_vs_strongest: 0.14358600583090392
-rare_failure_recall_delta_vs_strongest: 0.13765792031098162
-contact_boundary_error_delta_vs_strongest: -0.058260447035957175
-unsafe_commitment_delta_vs_strongest: -0.013362487852283778
-overtrust_delta_vs_strongest: -0.03702623906705539
-intervention_cost_delta_vs_strongest: -0.028911564625850372
-ablation_margin_vs_best_removed_component: 0.050777453838678266
-strongest_non_oracle_baseline: conformal_risk_filter
-best_removed_component: minus_embodiment_shift_detector
+stress_gate: True
+fixed_risk_gate: True
+scope_gate: False
+success_margin_vs_strongest: 0.07476851851851829
+utility_margin_vs_strongest: 0.10037549603174611
+rare_failure_recall_delta_vs_strongest: 0.07344576719576723
+contact_boundary_error_delta_vs_strongest: -0.03296957671957676
+unsafe_commitment_delta_vs_strongest: -0.023148148148148147
+overtrust_delta_vs_strongest: -0.028339947089947085
+intervention_cost_delta_vs_strongest: 0.0021825396825397025
+tail_risk_delta_vs_strongest: -0.02681878306878306
+ablation_success_margin_vs_best_removed_component: 0.08125000000000004
+ablation_utility_margin_vs_best_removed_component: 0.10662268518518525
+stress_utility_margin_at_max_stress: 0.10974421296296288
+strict_fixed_risk_coverage: 0.6836953703703703
+strict_fixed_risk_utility_margin: 0.12171690393518514
+strongest_non_oracle_baseline: proposed_embodied_scale_exception_audit_v4
+best_removed_component_success: minus_scale_slope_residual
+best_removed_component_utility: minus_scale_slope_residual
 
 Pairwise proposed comparisons:
-conformal_risk_filter: diff=0.144 +/- 0.006, wins=7/7, decision=proposed_better
-data_only_scaling: diff=0.256 +/- 0.009, wins=7/7, decision=proposed_better
-ensemble_uncertainty_gate: diff=0.164 +/- 0.005, wins=7/7, decision=proposed_better
-generic_scaling_law_extrapolator: diff=0.235 +/- 0.009, wins=7/7, decision=proposed_better
-large_behavior_clone: diff=0.275 +/- 0.006, wins=7/7, decision=proposed_better
-model_only_scaling: diff=0.261 +/- 0.012, wins=7/7, decision=proposed_better
-oracle_exception_selector: diff=-0.159 +/- 0.009, wins=0/7, decision=not_decisive
-small_behavior_clone: diff=0.349 +/- 0.006, wins=7/7, decision=proposed_better
+compute_balanced_scaling: success_diff=0.2873 +/- 0.0107, utility_diff=0.4240 +/- 0.0104, utility_wins=10/10, decision=proposed_better
+conformal_risk_filter: success_diff=0.2115 +/- 0.0085, utility_diff=0.2822 +/- 0.0097, utility_wins=10/10, decision=proposed_better
+data_only_scaling: success_diff=0.3279 +/- 0.0098, utility_diff=0.4666 +/- 0.0093, utility_wins=10/10, decision=proposed_better
+dropout_risk_filter: success_diff=0.2280 +/- 0.0092, utility_diff=0.3054 +/- 0.0089, utility_wins=10/10, decision=proposed_better
+ensemble_uncertainty_gate: success_diff=0.2384 +/- 0.0096, utility_diff=0.3224 +/- 0.0089, utility_wins=10/10, decision=proposed_better
+generic_scaling_law_extrapolator: success_diff=0.3087 +/- 0.0091, utility_diff=0.4582 +/- 0.0084, utility_wins=10/10, decision=proposed_better
+invariance_penalty_policy: success_diff=0.2078 +/- 0.0088, utility_diff=0.3013 +/- 0.0084, utility_wins=10/10, decision=proposed_better
+large_behavior_clone: success_diff=0.3577 +/- 0.0078, utility_diff=0.5196 +/- 0.0077, utility_wins=10/10, decision=proposed_better
+medium_behavior_clone: success_diff=0.3857 +/- 0.0081, utility_diff=0.5256 +/- 0.0079, utility_wins=10/10, decision=proposed_better
+model_only_scaling: success_diff=0.3401 +/- 0.0104, utility_diff=0.4941 +/- 0.0091, utility_wins=10/10, decision=proposed_better
+oracle_exception_selector: success_diff=-0.1032 +/- 0.0068, utility_diff=-0.1081 +/- 0.0065, utility_wins=0/10, decision=not_decisive
+proposed_embodied_scale_exception_audit_v4: success_diff=0.0748 +/- 0.0075, utility_diff=0.1004 +/- 0.0064, utility_wins=10/10, decision=proposed_better
+retrieval_augmented_nearest_failure: success_diff=0.1961 +/- 0.0073, utility_diff=0.2675 +/- 0.0067, utility_wins=10/10, decision=proposed_better
+risk_sensitive_cvar_policy: success_diff=0.2208 +/- 0.0122, utility_diff=0.2896 +/- 0.0118, utility_wins=10/10, decision=proposed_better
+small_behavior_clone: success_diff=0.4307 +/- 0.0079, utility_diff=0.5581 +/- 0.0073, utility_wins=10/10, decision=proposed_better
 
 Ablations:
-full_embodied_scale_exception_audit: success=0.554 +/- 0.006, rare_recall=0.515, contact_error=0.220, unsafe=0.072, note=all components
-minus_embodiment_shift_detector: success=0.503 +/- 0.007, rare_recall=0.480, contact_error=0.234, unsafe=0.086, note=misses morphology and actuation shift
-minus_shortcut_audit: success=0.485 +/- 0.006, rare_recall=0.473, contact_error=0.237, unsafe=0.091, note=cannot separate visual shortcut scaling from embodied skill
-minus_recoverability_calibration: success=0.483 +/- 0.005, rare_recall=0.483, contact_error=0.240, unsafe=0.103, note=overtrusts scaled policy when recovery budget is scarce
-minus_contact_boundary_factor: success=0.475 +/- 0.007, rare_recall=0.476, contact_error=0.299, unsafe=0.101, note=cannot identify contact-boundary inversions
-minus_rare_tail_memory: success=0.464 +/- 0.008, rare_recall=0.307, contact_error=0.256, unsafe=0.083, note=forgets rare physical failures behind average scaling curves
-uncertainty_gate_only: success=0.379 +/- 0.006, rare_recall=0.343, contact_error=0.295, unsafe=0.100, note=ensemble uncertainty gate baseline
+full_boundary_aware_scale_exception_audit_v5: success=0.6477, utility=0.7453, scale_gap=0.2354, note=all components
+minus_scale_slope_residual: success=0.5664, utility=0.6387, scale_gap=0.2748, note=removes residual test between average scale gain and boundary risk
+minus_embodiment_shift_detector: success=0.5553, utility=0.6279, scale_gap=0.2556, note=misses morphology and actuation shift
+minus_counterfactual_coverage_score: success=0.5544, utility=0.6209, scale_gap=0.2794, note=does not audit whether rare boundary states were covered
+minus_shortcut_audit: success=0.5458, utility=0.6137, scale_gap=0.2762, note=cannot separate visual shortcut scaling from embodied skill
+minus_contact_boundary_factor: success=0.5461, utility=0.6101, scale_gap=0.2789, note=misses contact-boundary inversions
+minus_boundary_mixture_model: success=0.5458, utility=0.6074, scale_gap=0.2701, note=collapses distinct boundary failures into one uncertainty score
+minus_recoverability_calibration: success=0.5468, utility=0.6052, scale_gap=0.2655, note=overtrusts scaled policy when recovery is scarce
+minus_rare_tail_memory: success=0.5204, utility=0.5619, scale_gap=0.2843, note=forgets rare physical failures behind average scaling curves
+uncertainty_gate_only: success=0.3729, utility=0.3852, scale_gap=0.2690, note=ensemble uncertainty gate baseline

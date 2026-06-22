@@ -1,17 +1,37 @@
 # Final Audit
 
-1. Chosen thesis: robot scaling curves can improve average metrics while missing embodied failure boundaries in rare contact, shortcut, embodiment-shift, and recovery-scarce regimes.
-2. ICLR-main decision: STRONG_REVISE.
-3. Submission-hardening version: v4.1.
-4. Evidence: 5 tasks x 7 scale-exception regimes x 5 splits x 9 methods, 7 seeds, 84 episodes/group.
-5. Strongest non-oracle baseline: `conformal_risk_filter`.
-6. Main result: proposed combined-exception success `0.550 +/- 0.005` vs strongest non-oracle `0.407 +/- 0.006`.
-7. Diagnostic result: rare-failure recall `0.512` vs `0.375`; contact-boundary error `0.225` vs `0.283`.
-8. Safety result: unsafe commitment `0.073` vs `0.086`; overtrust `0.069` vs `0.106`; intervention cost `0.217` vs `0.246`.
-9. Ablation result: full model `0.554 +/- 0.006`; best removed component `minus_embodiment_shift_detector` at `0.503 +/- 0.007`.
-10. Pairwise result: proposed beats the strongest non-oracle baseline in 7/7 seeds with `0.144 +/- 0.006` mean success difference.
-11. Stress result: at maximum stress level `0.95`, proposed success `0.539 +/- 0.007` vs strongest non-oracle `0.389 +/- 0.009`, with higher rare-failure recall and lower contact-boundary error, unsafe commitment, and overtrust.
-12. Claim-validity status: mechanism supported locally; not submission-ready without external robot/high-fidelity validation.
-13. Exact Downloads PDF path: `C:/Users/wangz/Downloads/107.pdf`.
-14. GitHub URL: https://github.com/Jason-Wang313/107_scale_law_exceptions_robotics
-15. Confirmation: no visible Desktop copy was requested or made.
+Paper: 107 scale_law_exceptions_robotics
+
+Audit date: 2026-06-22 23:07:28 +08:00
+
+Submission-hardening version: v5 expanded
+
+Terminal decision: STRONG_REVISE
+
+ICLR main ready: no
+
+## Evidence Rebuilt
+
+- Runner: `src/run_experiment.py`
+- Manuscript generator: `scripts/generate_manuscript.py`
+- Validator: `scripts/validate_submission_artifacts.py`
+- Main rows: 92,160 cell rows.
+- Stress rows: 43,200 cell rows.
+- Fixed-risk rows: 46,080 cell rows.
+- Ablation rows: 7,200 cell rows.
+- Failure cases: 24.
+- PDF: `C:/Users/wangz/Downloads/107.pdf`
+- PDF pages: 28.
+- PDF SHA256: `C89FA6CF361AB036F12378316CDD850EA7742B20E4649D91CC02A92E1FF691CD`
+
+## Gate Result
+
+All frozen local empirical gates pass. V5 beats the strongest non-oracle baseline `proposed_embodied_scale_exception_audit_v4` by `0.07477` hard success and `0.10038` utility, improves rare-failure recall by `0.07345`, reduces contact-boundary error by `0.03297`, reduces unsafe commitment by `0.02315`, reduces overtrust by `0.02834`, clears the ablation/stress/fixed-risk gates, and remains below the oracle.
+
+## Scope Result
+
+The scope gate fails. The repository does not contain a real robot study, accepted high-fidelity benchmark, external benchmark split, calibrated deployment log, trained checkpoint, or rollout video. Therefore the paper is not ICLR-main-ready despite strong local evidence.
+
+## Visual PDF QA
+
+Rendered pages 1, 2, 5, 15, and 28. Title/abstract were readable, bright boxed citations were visible, tables and figures were not clipped, appendices were legible, and bibliography links rendered normally. Temporary render files were removed.

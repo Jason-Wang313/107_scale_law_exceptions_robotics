@@ -1,0 +1,16 @@
+comparison,baseline,is_strongest_non_oracle,mean_success_diff,ci95_success_diff,wins_success_over_seeds,mean_utility_diff,ci95_utility_diff,wins_utility_over_seeds,seeds,decision
+boundary_aware_scale_exception_audit_v5_vs_compute_balanced_scaling,compute_balanced_scaling,no,0.287269,0.010651,10,0.424006,0.01038,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_conformal_risk_filter,conformal_risk_filter,no,0.211475,0.008537,10,0.282173,0.00971,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_data_only_scaling,data_only_scaling,no,0.327943,0.00982,10,0.466573,0.00931,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_dropout_risk_filter,dropout_risk_filter,no,0.228009,0.009156,10,0.305373,0.00891,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_ensemble_uncertainty_gate,ensemble_uncertainty_gate,no,0.238393,0.00957,10,0.322369,0.008945,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_generic_scaling_law_extrapolator,generic_scaling_law_extrapolator,no,0.308664,0.009115,10,0.4582,0.008377,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_invariance_penalty_policy,invariance_penalty_policy,no,0.207804,0.008787,10,0.301344,0.008435,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_large_behavior_clone,large_behavior_clone,no,0.357672,0.007836,10,0.519615,0.0077,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_medium_behavior_clone,medium_behavior_clone,no,0.385714,0.008054,10,0.525583,0.007888,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_model_only_scaling,model_only_scaling,no,0.340079,0.010356,10,0.494071,0.009146,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_oracle_exception_selector,oracle_exception_selector,no,-0.103208,0.006797,0,-0.108101,0.00646,0,10,not_decisive
+boundary_aware_scale_exception_audit_v5_vs_proposed_embodied_scale_exception_audit_v4,proposed_embodied_scale_exception_audit_v4,yes,0.074769,0.007479,10,0.100375,0.006373,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_retrieval_augmented_nearest_failure,retrieval_augmented_nearest_failure,no,0.196065,0.007345,10,0.267485,0.006721,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_risk_sensitive_cvar_policy,risk_sensitive_cvar_policy,no,0.220767,0.012244,10,0.289569,0.011761,10,10,proposed_better
+boundary_aware_scale_exception_audit_v5_vs_small_behavior_clone,small_behavior_clone,no,0.430655,0.007898,10,0.558141,0.007338,10,10,proposed_better
